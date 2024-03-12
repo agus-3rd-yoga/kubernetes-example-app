@@ -58,7 +58,7 @@ jobs:
             # The branch, tag or SHA to checkout. When checking out the repository that
             # triggered a workflow, this defaults to the reference or SHA for that event.
             # Otherwise, uses the default branch.
-          ref: 'master'
+          ref: 'main'
         
 
 
@@ -108,7 +108,7 @@ jobs:
           # The branch, tag or SHA to checkout. When checking out the repository that
           # triggered a workflow, this defaults to the reference or SHA for that event.
           # Otherwise, uses the default branch.
-          ref: 'master'
+          ref: 'main'
 
       # Using Github provided API method to login to Dockerhub
       - name: Login to Docker Hub Container registry
