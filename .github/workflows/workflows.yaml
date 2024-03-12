@@ -1,0 +1,126 @@
+# This is a basic workflow to help you get started with Actions
+name: Game 2048 CI
+
+# Controls when the workflow will run
+on:
+
+  # Triggers the workflow on push or pull request events but only for the "main" branch
+  push:
+    branches: [ "*" ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+
+  # Check Dockerfile format to match best practice as possible
+  lint-dockerfile:
+    
+    name: Checking & Linting Dockerfile
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      - uses: actions/checkout@v4
+      - name: Lint Dockerfile
+        uses: hadolint/hadolint-action@master
+        with:
+          dockerfile: "Dockerfile"
+
+  # This workflow contains a single job called "build-app-karsajobs"
+  build-and-push-image-to-Github-registries:
+
+    name: Pushing image to Github registry
+
+    needs: ["lint-dockerfile"]
+
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+
+            # The branch, tag or SHA to checkout. When checking out the repository that
+            # triggered a workflow, this defaults to the reference or SHA for that event.
+            # Otherwise, uses the default branch.
+          ref: 'master'
+        
+
+
+      - name: Log in to the Github Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+      
+
+      - name: Building and pushing Docker image to Github Registry
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}     
+            
+  build-and-push-image-to-Dockerhub-registries:
+
+    name: Pushing image to Dockerhub registry
+        
+    needs: ["lint-dockerfile"]
+        
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+        
+    permissions:
+      contents: read
+      packages: write
+        
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+        
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+        
+          # The branch, tag or SHA to checkout. When checking out the repository that
+          # triggered a workflow, this defaults to the reference or SHA for that event.
+          # Otherwise, uses the default branch.
+          ref: 'master'
+
+      # Using Github provided API method to login to Dockerhub
+      - name: Login to Docker Hub Container registry
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # Build & push newly created image to Docker Hub registry using proper naming match to docker rules
+      - name: Building and pushing Docker image to Docker hub Registry
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/order-service:latest
