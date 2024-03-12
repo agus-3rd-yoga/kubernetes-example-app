@@ -10,8 +10,7 @@ ENV NODE_ENV=development
 RUN npm run build
 
 FROM node:slim
-RUN npm install http-server -g
-RUN mkdir /public
+RUN npm install http-server@14.1.1 -g && mkdir /public
 WORKDIR /public
 COPY --from=builder /usr/src/app/dist/ ./
 EXPOSE 8080
